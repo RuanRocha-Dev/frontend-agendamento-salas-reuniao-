@@ -1,4 +1,4 @@
-# 🏢 APIs de gestão de salas de reunião - Sistema de Agendamento
+# 🏢 FRONTEND de gestão de salas de reunião - Sistema de Agendamento
 
 Este projeto foi criado para facilitar a gestão de salas de reunião, permitindo que usuários cadastrem salas e agendem horários de forma organizada.
 
