@@ -2,7 +2,7 @@ export interface MeetingRoom {
     id: number;
     name: string;
     capacity: number;
-    createdAt: Date;
+    createdAt?: Date;
 }
 
 export interface Meeting {
@@ -43,4 +43,13 @@ export interface ScheduleMeetingData {
     description: string;
     startTime: string;
     endTime: string;
+}
+
+export interface Appointment {
+    id: number;
+    idMeetingRoom: number;
+    description: string;
+    startTime: string;
+    endTime: string;
+    createdAt?: Date;
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { MeetingRoom, CreateRoomData, EditRoomData, ScheduleMeetingData, dataRooms } from './types';
+import type { MeetingRoom, CreateRoomData, EditRoomData, ScheduleMeetingData, dataRooms, Appointment } from './types';
 import { MeetingRoomCard } from './components/MeetingRoomCard';
 import { CreateRoomModal } from './components/CreateRoomModal';
 import { Modal } from './components/Modal';
@@ -13,11 +13,12 @@ function App() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [genericModal, setGenericModal] = useState(false);
   const [titleModal, setTitleModal] = useState("⚠️ Atenção");
-  const [msgModal, setMsgModal] = useState(false);
+  const [msgModal, setMsgModal] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [idRoomAppointment, setIdRoomAppointment] = useState(0);
   const [selectedRoom, setSelectedRoom] = useState<MeetingRoom | null>(null);
+  const [roomAppointments, setRoomAppointments] = useState<Appointment[]>([]);
 
   const handleCreateRoom = (data: CreateRoomData) => {
     api.post('api/room/create', {
@@ -73,10 +74,13 @@ function App() {
         setTitleModal("✅ Sucesso")
         setMsgModal(resp?.data?.message)
         setGenericModal(true);
+        
+        getRoomAppointments(idRoomAppointment);
       }
     } catch (error: unknown) {
         const msgError = error?.response?.data?.message || 'Erro ao criar agendamento';
-        setMsgModal(msgError)
+        setTitleModal("⚠️ Atenção");
+        setMsgModal(msgError);
         setGenericModal(true);
 
         setIsScheduleModalOpen(false);
@@ -121,7 +125,30 @@ function App() {
   const handleScheduleMeeting = (room: MeetingRoom) => {
     setSelectedRoom(room);
     setIsScheduleModalOpen(true);
-    setIdRoomAppointment(room.id)
+    setIdRoomAppointment(room.id);
+    getRoomAppointments(room.id);
+  };
+
+  const getRoomAppointments = async (roomId: number) => {
+    try {
+      const response = await api.get(`api/appointment/findFutureByRoomId/?idRoom=${roomId}`);
+      console.log(response.data.data)
+      setRoomAppointments(response.data.data || []);
+    } catch (error) {
+      const msgError = error?.response?.data?.message || 'Erro ao buscar agendamentos';
+      setMsgModal(msgError)
+      setGenericModal(true);
+      setRoomAppointments([]);
+    }
+  };
+
+  const convertDataRoomToMeetingRoom = (dataRoom: dataRooms): MeetingRoom => {
+    return {
+      id: dataRoom.id,
+      name: dataRoom.name,
+      capacity: dataRoom.capacity,
+      createdAt: new Date(dataRoom.created_at),
+    };
   };
 
   return (
@@ -146,7 +173,7 @@ function App() {
       <main style={{ maxWidth: '80rem', margin: '0 auto', padding: '3rem 1rem' }}>
         {rooms.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-state-icon">📭</span>
+            <span className="empty-state-icon"> 🏢 </span>
             <h2 className="empty-state-title">Nenhuma sala criada</h2>
             <p className="empty-state-text">
               Clique em "Nova Sala" para criar sua primeira sala de reunião
@@ -157,7 +184,7 @@ function App() {
             {rooms.map((room) => (
               <MeetingRoomCard
                 key={room.id}
-                room={room}
+                room={convertDataRoomToMeetingRoom(room)}
                 onEdit={handleEditRoom}
                 onDelete={deleteRoom}
                 onSchedule={handleScheduleMeeting}
@@ -198,9 +225,11 @@ function App() {
           setIsScheduleModalOpen(false);
           setSelectedRoom(null);
           setIdRoomAppointment(0);
+          setRoomAppointments([]);
         }}
         onSubmit={createAppointment}
         room={selectedRoom}
+        appointments={roomAppointments}
       />
     </div>
   );
